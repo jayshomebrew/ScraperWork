@@ -79,6 +79,12 @@ class source:
             except:
                 #log_utils.log('sources', 1)
                 pass
+                
+            search_strings = [
+               "video you are looking for is not found",
+               "file you are looking for",
+               "Not Found"
+            ]
             try:
                 ext_links = DOM(html, 'tr', attrs={'class': r'ext_link.+?'})
                 links = [(DOM(i, 'a', ret='href'), DOM(i, 'a', ret='title')) for i in ext_links]
@@ -86,12 +92,23 @@ class source:
                 for link, host in links:
                     try:
                         link = self.base_link + link if not link.startswith('http') else link
+                        # dig a little deeper
                         link = link.replace('/open/link/','/open/site/')
-                        item = scrape_sources.make_item(hostDict, link, host=host, info=None, prep=True)
-                        if item:
-                            if scrape_sources.check_host_limit(item['source'], self.results):
+                        r = client.scrapePage(link)
+                        if r.status_code == 200 and not any(text.lower() in r.text.lower() for text in search_strings):
+                            link1 = DOM(r.text, 'iframe', ret='src')
+                            if link1:
+                                links2 = [linky for linky in link1 if "https" in linky]
+                                link = links2[0]
+                            if 'embed' in link.lower():
                                 continue
-                            self.results.append(item)
+                            elif 'ybspw' in link.lower():
+                                continue
+                            item = scrape_sources.make_item(hostDict, link, host=host, info=None, prep=True)
+                            if item:
+                                if scrape_sources.check_host_limit(item['source'], self.results):
+                                    continue
+                                self.results.append(item)
                     except:
                         #log_utils.log('sources', 1)
                         pass
@@ -120,5 +137,3 @@ class source:
                 pass
         else:
             return url
-
-

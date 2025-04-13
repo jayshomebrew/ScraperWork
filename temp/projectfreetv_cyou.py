@@ -80,11 +80,6 @@ class source:
                 #log_utils.log('sources', 1)
                 pass
                 
-            search_strings = [
-               "video you are looking for is not found",
-               "file you are looking for",
-               "Not Found"
-            ]
             try:
                 ext_links = DOM(html, 'tr', attrs={'class': r'ext_link.+?'})
                 links = [(DOM(i, 'a', ret='href'), DOM(i, 'a', ret='title')) for i in ext_links]
@@ -93,22 +88,15 @@ class source:
                     try:
                         link = self.base_link + link if not link.startswith('http') else link
                         # dig a little deeper
-                        link = link.replace('/open/link/','/open/site/')
-                        r = client.scrapePage(link)
-                        if r.status_code == 200 and not any(text.lower() in r.text.lower() for text in search_strings):
-                            link1 = DOM(r.text, 'iframe', ret='src')
-                            if link1:
-                                links2 = [linky for linky in link1 if "https" in linky]
-                                link = links2[0]
-                            if 'embed' in link.lower():
+                        link = self.resolve(link)
+                        if not link:
+                            continue
+                        link = self.base_link + link if not link.startswith('http') else link
+                        #log_utils.log('link =' + repr(link), 1)
+                        for source in scrape_sources.process(hostDict, link):
+                            if scrape_sources.check_host_limit(source['source'], self.results):
                                 continue
-                            elif 'ybspw' in link.lower():
-                                continue
-                            item = scrape_sources.make_item(hostDict, link, host=host, info=None, prep=True)
-                            if item:
-                                if scrape_sources.check_host_limit(item['source'], self.results):
-                                    continue
-                                self.results.append(item)
+                            self.results.append(source)
                     except:
                         #log_utils.log('sources', 1)
                         pass
@@ -124,16 +112,21 @@ class source:
     def resolve(self, url):
         if any(x in url for x in self.domains):
             try:
-                html = client.request(url, cookie=self.cookie)
+                html = client.request(url, cookie=self.cookie, timeout=10)
                 try:
                     link = DOM(html, 'iframe', ret='src')[0]
+                    if link == '/e/' or 'javascript' in link:
+                        link = None
+                    #log_utils.log('link =' + repr(link), 1)
                 except:
                     match = re.compile(r'"(/open/site/.+?)"', re.I|re.S).findall(html)[0]
+                    #log_utils.log('match =' + repr(match), 1)
                     link = self.base_link + match if not match.startswith('http') else match
-                    link = client.request(link, output='geturl')
+                    link = client.request(link, output='geturl', timeout=10)
                 return link
             except:
                 #log_utils.log('resolve', 1)
                 pass
         else:
             return url
+

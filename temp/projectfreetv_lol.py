@@ -7,7 +7,7 @@ from resources.lib.modules import cleantitle
 from resources.lib.modules import client
 from resources.lib.modules import client_utils
 from resources.lib.modules import scrape_sources
-#from resources.lib.modules import log_utils
+from resources.lib.modules import log_utils
 
 DOM = client_utils.parseDOM
 
@@ -16,12 +16,12 @@ class source:
     def __init__(self):
         try:
             self.results = []
-            self.domains = ['projectfreetv.lol', 'profreetv.stream']
-            self.base_link = 'https://www.projectfreetv.lol'
+            self.domains = ['projectfreetv.lol', 'projectfreetv.cyou', 'profreetv.stream']
+            self.base_link = 'https://www.profreetv.stream'
             self.movie_link = '/movies/%s-%s/'
             self.tvshow_link = '/tv-series/%s-season-%s-episode-%s/'
             self.cookie = client.request(self.base_link, output='cookie', timeout='5')
-            self.notes = 'sim/dupe site of projectfreetv_cyou and watchseries_cyou.'
+            self.notes = 'sim/dupe site of projectfreetv_cyou and projectfreetv_lol.'
         except:
             #log_utils.log('__init__', 1)
             return
@@ -64,29 +64,18 @@ class source:
             else:
                 result_url = self.base_link + self.movie_link % (search_title, year)
             html = client.request(result_url, cookie=self.cookie)
-            try:
-                links = DOM(html, 'iframe', ret='src')
-                for link in links:
-                    try:
-                        link = self.base_link + link if not link.startswith('http') else link
-                        for source in scrape_sources.process(hostDict, link):
-                            if scrape_sources.check_host_limit(source['source'], self.results):
-                                continue
-                            self.results.append(source)
-                    except:
-                        #log_utils.log('sources', 1)
-                        pass
-            except:
-                #log_utils.log('sources', 1)
-                pass
+            # log_utils.log('html =' + repr(html), 1)
             try:
                 ext_links = DOM(html, 'tr', attrs={'class': r'ext_link.+?'})
                 links = [(DOM(i, 'a', ret='href'), DOM(i, 'a', ret='title')) for i in ext_links]
                 links = [(i[0][0], i[1][0]) for i in links if len(i[0]) > 0 and len(i[1]) > 0]
+                # log_utils.log('links =' + repr(links), 1)
                 for link, host in links:
                     try:
                         link = self.base_link + link if not link.startswith('http') else link
-                        link = link.replace('/open/link/','/open/site/')
+                        if not link:
+                            continue
+                        
                         item = scrape_sources.make_item(hostDict, link, host=host, info=None, prep=True)
                         if item:
                             if scrape_sources.check_host_limit(item['source'], self.results):
@@ -107,18 +96,33 @@ class source:
     def resolve(self, url):
         if any(x in url for x in self.domains):
             try:
+                url = url.replace('/open/link/','/open/site/')
                 html = client.request(url, cookie=self.cookie)
                 try:
                     link = DOM(html, 'iframe', ret='src')[0]
+                    if 'doodstream.com' in html.lower():
+                        hoster = DOM(html, 'link', attrs={'rel': 'preconnect'}, ret='href')[0]
+                        log_utils.log('hoster =' + repr(hoster), 1)
+                        hoster = 'https:' + hoster if hoster.startswith('//') else hoster
+                        hoster = hoster.replace('i.doodcdn.io', 'dood.so')  ## hack fix for doodstream.com
+                        link = hoster + link if not link.startswith('http') else link
+                        # log_utils.log('hoster link =' + repr(link), 1)
+                    if 'c1z39.com' in link:  ## resolveURL broken; Difficult to fix
+                        link = link.replace('https://c1z39.com', 'https://filemoon.sx')
+                        link = None
+                    if 'movearnpre.com' in link.lower():  ## temp hack filelions, resolveURL to be updated
+                        link = link.replace('https://movearnpre.com', 'https://smoothpre.com')
+                    if link == '/e/' or 'javascript' in link or link.endswith('/e/'):
+                        link = None
                 except:
                     match = re.compile(r'"(/open/site/.+?)"', re.I|re.S).findall(html)[0]
                     link = self.base_link + match if not match.startswith('http') else match
-                    link = client.request(link, output='geturl')
+                    link = client.request(link, output='geturl', timeout=10)
+                # log_utils.log('return link =' + repr(link), 1)
                 return link
             except:
                 #log_utils.log('resolve', 1)
                 pass
         else:
             return url
-
 

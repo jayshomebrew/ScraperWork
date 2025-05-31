@@ -104,14 +104,11 @@ class source:
                         hoster = DOM(html, 'link', attrs={'rel': 'preconnect'}, ret='href')[0]
                         log_utils.log('hoster =' + repr(hoster), 1)
                         hoster = 'https:' + hoster if hoster.startswith('//') else hoster
-                        hoster = hoster.replace('i.doodcdn.io', 'dood.so')  ## hack fix for doodstream.com
                         link = hoster + link if not link.startswith('http') else link
                         # log_utils.log('hoster link =' + repr(link), 1)
                     if 'c1z39.com' in link:  ## resolveURL broken; Difficult to fix
                         link = link.replace('https://c1z39.com', 'https://filemoon.sx')
                         link = None
-                    if 'movearnpre.com' in link.lower():  ## temp hack filelions, resolveURL to be updated
-                        link = link.replace('https://movearnpre.com', 'https://smoothpre.com')
                     if link == '/e/' or 'javascript' in link or link.endswith('/e/'):
                         link = None
                 except:

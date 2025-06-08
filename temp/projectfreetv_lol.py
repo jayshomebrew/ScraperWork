@@ -102,13 +102,10 @@ class source:
                     link = DOM(html, 'iframe', ret='src')[0]
                     if 'doodstream.com' in html.lower():
                         hoster = DOM(html, 'link', attrs={'rel': 'preconnect'}, ret='href')[0]
-                        log_utils.log('hoster =' + repr(hoster), 1)
+                        # log_utils.log('hoster =' + repr(hoster), 1)
                         hoster = 'https:' + hoster if hoster.startswith('//') else hoster
                         link = hoster + link if not link.startswith('http') else link
                         # log_utils.log('hoster link =' + repr(link), 1)
-                    if 'c1z39.com' in link:  ## resolveURL broken; Difficult to fix
-                        link = link.replace('https://c1z39.com', 'https://filemoon.sx')
-                        link = None
                     if link == '/e/' or 'javascript' in link or link.endswith('/e/'):
                         link = None
                 except:

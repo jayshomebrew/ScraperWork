@@ -64,7 +64,6 @@ class source:
             else:
                 result_url = self.base_link + self.movie_link % (search_title, year)
             html = client.request(result_url, cookie=self.cookie)
-            # log_utils.log('html =' + repr(html), 1)
             try:
                 ext_links = DOM(html, 'tr', attrs={'class': r'ext_link.+?'})
                 links = [(DOM(i, 'a', ret='href'), DOM(i, 'a', ret='title')) for i in ext_links]
@@ -98,25 +97,43 @@ class source:
             try:
                 url = url.replace('/open/link/','/open/site/')
                 html = client.request(url, cookie=self.cookie)
+                if not html:
+                    return
                 try:
-                    link = DOM(html, 'iframe', ret='src')[0]
-                    if 'doodstream.com' in html.lower():
+                    if 'redirecting...' in html.lower():  # fix for voe.sx
+                        match = re.search(r"window\.location\.href\s*=\s*'([^']+)'", html)
+                        link = match.group(1) if match else None
+                        html = client.request(link, cookie=self.cookie)
+                        if not html:
+                            return
+                    links = DOM(html, 'iframe', ret='src')
+                    link = links[0] if links else None
+                    if link:
+                        link = link.replace('streamhls.to', 'savefiles.com') if 'streamhls.to' in link else link
+                    if 'doodstream.com' in html.lower():  #fix for doodstream
                         hoster = DOM(html, 'link', attrs={'rel': 'preconnect'}, ret='href')[0]
-                        # log_utils.log('hoster =' + repr(hoster), 1)
                         hoster = 'https:' + hoster if hoster.startswith('//') else hoster
+                        hoster = hoster.replace('i.doodcdn.io', 'dood.so')  ## hack fix for doodstream.com
                         link = hoster + link if not link.startswith('http') else link
-                        # log_utils.log('hoster link =' + repr(link), 1)
+                    if not link:
+                        return
+                    if link.startswith('/e/'):  #fix for mixdrop.co
+                        html = DOM(html, 'div', attrs={'class': 'download-embed block'})
+                        links = DOM(html, 'iframe', ret='src')
+                        link = links[0] if links else None
                     if link == '/e/' or 'javascript' in link or link.endswith('/e/'):
                         link = None
+                    if not link:
+                        return
                 except:
                     match = re.compile(r'"(/open/site/.+?)"', re.I|re.S).findall(html)[0]
                     link = self.base_link + match if not match.startswith('http') else match
                     link = client.request(link, output='geturl', timeout=10)
-                # log_utils.log('return link =' + repr(link), 1)
                 return link
             except:
                 #log_utils.log('resolve', 1)
                 pass
         else:
             return url
+
 

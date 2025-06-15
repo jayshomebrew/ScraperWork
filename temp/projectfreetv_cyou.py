@@ -88,7 +88,7 @@ class source:
                     try:
                         link = self.base_link + link if not link.startswith('http') else link
                         # dig a little deeper
-                        link = self.resolve(link)
+                        # link = self.resolve(link)
                         if not link:
                             continue
                         link = self.base_link + link if not link.startswith('http') else link

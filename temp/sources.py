@@ -470,6 +470,8 @@ class sources:
                     label += ' | [B]%s[/B] | %s | [B]%s[/B][CR] [I]%s[/I]' % (q, p, s, f)
                 else:
                     label += ' | [B]%s[/B] | %s | [B]%s[/B][CR]' % (q, p, s)
+                if control.setting('addon.debug') == 'true':
+                    label += ' [COLOR darkorange]%s[/COLOR]' % u
             elif simple:
                 label = '%03d' % (int(i+1))
                 label += ' | [B]%s[/B] | %s | [B]%s[/B]' % (q, p, s)
@@ -1012,5 +1014,4 @@ class sources:
         except:
             log_utils.log('getProviderDomains', 1)
             pass
-
 

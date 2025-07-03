@@ -30,7 +30,7 @@ def vidsrc(link, hostDict, info=None):
                     script_html = script.replace("\'", '"')
                     m3u8_link = re.findall(r'file: "(https[^"]*)"', script_html, re.DOTALL)[0]
                     url = prepare_link(m3u8_link)
-                    log_utils.log('url =' + repr(url), 1)
+                    # log_utils.log('url =' + repr(url), 1)
                     if not url:
                         continue
                     source = {'source': 'v2.vidsrc.me', 'quality': 'SD', 'info': None, 'url': url, 'direct': False }

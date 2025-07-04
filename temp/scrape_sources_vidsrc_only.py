@@ -6,7 +6,8 @@ vidsrc_domains = ['v2.vidsrc.me', 'vidsrc.me', 'vidsrc.to', 'cloudnestra.com']
 
 def vidsrc(link, hostDict, info=None):
     sources = []
-    hostDict.extend(vidsrc_domains)  # include domains in hostDict, so we can use make_item
+    search = set(hostDict) # include domains in hostDict, so we can use make_item
+    hostDict.extend(i for i in vidsrc_domains if i not in search and not search.add(i))
     try:
         if scrape_vidsrc == 'false':
             return sources
@@ -35,7 +36,7 @@ def vidsrc(link, hostDict, info=None):
                     if not url:
                         continue
                     # source = {'source': 'v2.vidsrc.me', 'quality': 'SD', 'info': None, 'url': url, 'direct': False }
-                    source = make_item(hostDict, url, host=domain, info=info, prep=False)
+                    source = make_item(hostDict, url, host='v2.vidsrc.me', info=info, prep=False)
                     # log_utils.log('source =' + repr(source), 1)
                     if source:
                         sources.append(source)
